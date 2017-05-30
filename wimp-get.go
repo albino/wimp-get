@@ -85,16 +85,16 @@ func main() {
 
 		fmt.Printf("[%d/%s] %s...", track.Volume, num, track.Title)
 
-		var filename string
-		if (multidisc) {
-			filename = fmt.Sprintf("%s/Disc %d/%s - %s.flac", dirName, track.Volume, num, track.Title)
-		} else {
-			filename = fmt.Sprintf("%s/%s - %s.flac", dirName, num, track.Title)
-		}
-
+		var filename = fmt.Sprintf("%s - %s.flac", num, track.Title)
 		filename, e = platform.SanitiseFilename(filename)
 		if e != nil {
 			panic(e)
+		}
+
+		if (multidisc) {
+			filename = fmt.Sprintf("%s/Disc %d/%s", dirName, track.Volume, filename)
+		} else {
+			filename = fmt.Sprintf("%s/%s", dirName, filename)
 		}
 
 		if i == 0 {
