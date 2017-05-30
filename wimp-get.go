@@ -30,7 +30,11 @@ func main() {
 	}
 
 	exe, _ := os.Executable()
-	wDir := path.Dir(exe)
+	wDir, e := platform.DirOf(exe)
+	if e != nil {
+		panic(e)
+	}
+
 	magicData, e := ioutil.ReadFile(wDir + "/magic.json")
 	if e != nil {
 		panic(e)
