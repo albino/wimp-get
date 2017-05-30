@@ -1,4 +1,5 @@
 {
-	"sessionId" : "insert"
-	"ffmpeg" : "ffmpeg"
+	"sessionId" : "insert",
+	"ffmpeg" : "ffmpeg",
+	"sox" : "sox"
 }

@@ -12,6 +12,7 @@ import (
 	"wimp-get/platform"
 	"os/exec"
 	"net/http"
+	"strings"
 )
 
 func main() {
@@ -51,23 +52,32 @@ func main() {
 	fmt.Printf("[ %s - %s (%d) ]\n", album.Artist, album.Title, album.Year)
 
 	// Determine whether we have more than one disc
-	multidisc := false
+	maxdisc := 0
 	for _, track := range album.Tracks {
-		if track.Volume > 1 {
-			multidisc = true
-			break
+		if track.Volume > maxdisc {
+			maxdisc = track.Volume
 		}
+	}
+	var multidisc bool
+	if maxdisc > 1 {
+		multidisc = true
 	}
 
 	dirName := album.Artist+" - "+album.Title+" ("+fmt.Sprintf("%d", album.Year)+") [WEB FLAC]"
+	dirName, e = platform.SanitiseFilename(dirName)
+	if e != nil {
+		panic(e)
+	}
 
 	e = os.Mkdir(dirName, os.FileMode(0755))
 	if e != nil {
 		panic(e)
 	}
 
+	var firstFile string // we use this later to generate spectrals
+
 	// Time to do the ripping!
-	for _, track := range album.Tracks {
+	for i, track := range album.Tracks {
 		num := fmt.Sprintf("%d", track.Number)
 		if len(num) < 2 {
 			num = "0"+num
@@ -85,6 +95,10 @@ func main() {
 		filename, e = platform.SanitiseFilename(filename)
 		if e != nil {
 			panic(e)
+		}
+
+		if i == 0 {
+			firstFile = filename
 		}
 
 		// create disc dir if necessary
@@ -126,5 +140,67 @@ func main() {
 		resp.Body.Close()
 
 		println(" Done!")
+	}
+
+	// Get art
+	print("Getting album art...")
+
+	resp, e := http.Get(album.CoverUrl)
+	if e != nil {
+		panic(e)
+	}
+	defer resp.Body.Close()
+
+	var out io.Writer
+	if multidisc {
+		var outs []io.Writer
+		for i := 1; i <= maxdisc; i++ {
+			o, e := os.Create(fmt.Sprintf("%s/Disc %d/cover.jpg", dirName, i))
+			if e != nil {
+				panic(e)
+			}
+			outs = append(outs, o)
+		}
+		out = io.MultiWriter(outs...)
+		e = nil
+	} else {
+		out, e = os.Create(dirName+"/cover.jpg")
+	}
+	if e != nil {
+		panic(e)
+	}
+
+	_, e = io.Copy(out, resp.Body)
+	if e != nil {
+		panic(e)
+	}
+
+	println(" Done!")
+
+	// Generate Spectrals
+	var choice string
+	for !(choice == "y" || choice == "n") {
+		print("Generate spectrals? [y/n] ")
+		fmt.Scanln(&choice)
+		choice = strings.TrimRight(choice, "\n")
+	}
+
+	if choice == "y" {
+		full := exec.Command(magic["sox"].(string), firstFile, "-n", "remix", "1", "spectrogram",
+			"-x", "3000", "-y", "513", "-z", "120", "-w", "Kaiser", "-o", "SpecFull.png")
+		zoom := exec.Command(magic["sox"].(string), firstFile, "-n", "remix", "1", "spectrogram",
+			"-X", "500", "-y", "1025", "-z", "120", "-w", "Kaiser", "-S", "0:30", "-d", "0:04", "-o", "SpecZoom.png")
+		e = full.Run()
+		if e != nil {
+			println("Error generating full spectral!")
+		} else {
+			println("SpecFull.png written")
+		}
+		e = zoom.Run()
+		if e != nil {
+			println("Error generating zoomed spectral!")
+		} else {
+			println("SpecZoom.png written")
+		}
 	}
 }
