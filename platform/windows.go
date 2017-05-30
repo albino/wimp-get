@@ -17,7 +17,7 @@ func SanitiseFilename(filename string) (newName string, e error) {
 }
 
 func DirOf(filename string) (dirname string, e error) {
-	r, e := regexp.Compile(`[^\\]+$`)
+	r, e := regexp.Compile(`\\[^\\]+$`)
 	if e != nil {
 		return
 	}
