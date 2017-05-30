@@ -203,4 +203,29 @@ func main() {
 			println("SpecZoom.png written")
 		}
 	}
+
+	// Make .torrent file
+	choice = ""
+	for !(choice == "y" || choice == "n") {
+		print("Create .torrent file? [y/n] ")
+		fmt.Scanln(&choice)
+		choice = strings.TrimRight(choice, "\n")
+	}
+
+	if choice == "y" {
+		print("Announce URL: ")
+		var announce string
+		fmt.Scanln(&announce)
+		announce = strings.TrimRight(announce, "\n")
+
+		torrent := exec.Command(magic["mktorrent"].(string), "-l", "20", "-a", announce, dirName)
+		e = torrent.Run()
+		if e != nil {
+			println("Error creating .torrent file!")
+		} else {
+			fmt.Printf("%s.torrent created\n", dirName)
+		}
+	}
+
+	println("All done, exiting")
 }

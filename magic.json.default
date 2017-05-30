@@ -1,5 +1,6 @@
 {
 	"sessionId" : "insert",
 	"ffmpeg" : "ffmpeg",
-	"sox" : "sox"
+	"sox" : "sox",
+	"mktorrent" : "mktorrent"
 }
