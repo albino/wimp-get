@@ -15,6 +15,16 @@ import (
 	"strings"
 )
 
+func SanitiseFilename(filename string) (newName string, e error) {
+	r, e := regexp.Compile("[\\?<>:/\"\\\\|\\*]")
+	if e != nil {
+		return
+	}
+
+	newName = r.ReplaceAllString(filename, "")
+	return
+}
+
 func main() {
 	if len(os.Args) != 2 {
 		fmt.Printf("Usage: %s <wimp id or url>\n", os.Args[0])
@@ -68,7 +78,7 @@ func main() {
 	}
 
 	dirName := album.Artist+" - "+album.Title+" ("+fmt.Sprintf("%d", album.Year)+") [WEB FLAC]"
-	dirName, e = platform.SanitiseFilename(dirName)
+	dirName, e = SanitiseFilename(dirName)
 	if e != nil {
 		panic(e)
 	}
@@ -90,7 +100,7 @@ func main() {
 		fmt.Printf("[%d/%s] %s...", track.Volume, num, track.Title)
 
 		var filename = fmt.Sprintf("%s - %s.flac", num, track.Title)
-		filename, e = platform.SanitiseFilename(filename)
+		filename, e = SanitiseFilename(filename)
 		if e != nil {
 			panic(e)
 		}
